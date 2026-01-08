@@ -1,0 +1,110 @@
+local ShiftlockGui = Instance.new("ScreenGui")
+local ImageButton = Instance.new("ImageButton")
+
+ShiftlockGui.Name = "ShiftlockGui"
+ShiftlockGui.Parent = game.CoreGui
+ShiftlockGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+ShiftlockGui.ResetOnSpawn = false
+
+ImageButton.Parent = ShiftlockGui
+ImageButton.Active = true
+ImageButton.Draggable = true
+ImageButton.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+ImageButton.BackgroundTransparency = 1.000
+ImageButton.Position = UDim2.new(0.92, 0, 0.55, 0)
+ImageButton.Size = UDim2.new(0, 60, 0, 60)
+ImageButton.Image = "rbxassetid://17027749156"
+
+local players = game:GetService("Players")
+local runservice = game:GetService("RunService")
+local player = players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+local humanoid = character:WaitForChild("Humanoid")
+local camera = workspace.CurrentCamera
+
+local uis = game:GetService("UserInputService")
+ImageButton.Visible = uis.TouchEnabled
+
+local active = false
+local MAX_LENGTH = 900000
+local rootPos = Vector3.new(0, 0, 0)
+
+local function UpdatePos()
+    if character and humanoid and humanoid.RootPart then
+        rootPos = humanoid.RootPart.Position
+    end
+end
+
+local function UpdateImage(state)
+    if state == "ON" then
+        ImageButton.ImageColor3 = Color3.fromRGB(150, 100, 255)
+    else
+        ImageButton.ImageColor3 = Color3.fromRGB(255, 255, 255)
+    end
+end
+
+local function UpdateAutoRotate(bool)
+    if character and humanoid then
+        humanoid.AutoRotate = bool
+    end
+end
+
+local function GetUpdatedCameraCFrame()
+    if camera then
+        return CFrame.new(rootPos, Vector3.new(camera.CFrame.LookVector.X * MAX_LENGTH, rootPos.Y, camera.CFrame.LookVector.Z * MAX_LENGTH))
+    end
+end
+
+local function EnableShiftlock()
+    UpdatePos()
+    UpdateAutoRotate(false)
+    UpdateImage("ON")
+    if character and humanoid and humanoid.RootPart then
+        humanoid.RootPart.CFrame = GetUpdatedCameraCFrame()
+    end
+    if camera then
+        camera.CFrame = camera.CFrame * CFrame.new(1.7, 0, 0)
+    end
+end
+
+local function DisableShiftlock()
+    UpdatePos()
+    UpdateAutoRotate(true)
+    UpdateImage("OFF")
+    if camera then
+        camera.CFrame = camera.CFrame * CFrame.new(-1.7, 0, 0)
+    end
+    pcall(function()
+        if active then
+            active:Disconnect()
+            active = nil
+        end
+    end)
+end
+
+UpdateImage("OFF")
+active = false
+
+local function ShiftLock()
+    if not active then
+        active = runservice.RenderStepped:Connect(function()
+            EnableShiftlock()
+        end)
+    else
+        DisableShiftlock()
+    end
+end
+
+ImageButton.MouseButton1Click:Connect(function()
+    ShiftLock()
+end)
+
+player.CharacterAdded:Connect(function(char)
+    character = char
+    humanoid = character:WaitForChild("Humanoid")
+    if active then
+        DisableShiftlock()
+        active = false
+        UpdateImage("OFF")
+    end
+end)
