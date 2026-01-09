@@ -1,3 +1,8 @@
+if _G.ShiftLockLoaded then
+    return
+end
+_G.ShiftLockLoaded = true
+
 local ShiftlockGui = Instance.new("ScreenGui")
 local ImageButton = Instance.new("ImageButton")
 
